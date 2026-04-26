@@ -2,39 +2,185 @@
   <head>
     <meta charset="UTF-8">
     <title>gratzia cupon</title>
+    <style>
+  body {
+    background-color: #fefff7;
+    color: #254728;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    direction: rtl; /* Sets text direction to Right-to-Left for Hebrew */
+  }
+
+  .container {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(37, 71, 40, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid #99ae86;
+  }
+
+  h1 {
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    color: #254728;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 1rem;
+    border: 2px solid #99ae86;
+    border-radius: 8px;
+    background-color: #fefff7;
+    box-sizing: border-box; /* Prevents input from overflowing */
+    font-size: 1rem;
+    color: #254728;
+    transition: border-color 0.3s ease;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #254728;
+  }
+
+  button {
+    background-color: #254728;
+    color: #fefff7;
+    border: none;
+    padding: 14px 28px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+
+  button:hover {
+    background-color: #355f39;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  #result {
+    margin: 1rem 0;
+    font-weight: bold;
+  }
+
+  #result a {
+    color: #99ae86;
+    text-decoration: none;
+    border-bottom: 2px solid #99ae86;
+  }
+
+  /* Loader Styling */
+  .loader {
+    border: 2px solid #fefff7;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+    <link rel="stylesheet" href="style">
   </head>
   <body>
+  <div class="container">
     <h1>יצירת קופון</h1>
-    <input type="text" name="amount" id="amountInput" placeholder="הכנס סכום">
-    <input type="text" name="name" id="nameInput" placeholder="הכנס שם">
-    <input type="text" name="email" id="emailInput" placeholder="הכנס דואר אלקטרוני">
-    <input type="text" name="phone" id="phoneInput" placeholder="הכנס מספר טלפון">
+    
+    <input type="text" id="amountInput" placeholder="סכום לתשלום">
+    <input type="text" id="nameInput" placeholder="שם מלא">
+    <input type="email" id="emailInput" placeholder="דואר אלקטרוני">
+    <input type="tel" id="phoneInput" placeholder="מספר טלפון (05...)">
+
     <div id="result"></div>
-    <button id="payBtn">לתשלום</button>
-    <script>
-      document.getElementById('payBtn').addEventListener('click', function() {
-        const amount = document.getElementById('amountInput').value;
-        const name = document.getElementById('nameInput').value;
-        const email = document.getElementById('emailInput').value;
-        const phone = document.getElementById('phoneInput').value;
-        const data = {
-          amount: amount,
-          name: name,
-          email: email,
-          phone: phone
-        };
-        fetch('/api/submit', {
+
+    <button id="payBtn">
+      <span id="btnText">לתשלום</span>
+      <div id="btnLoader" class="loader" style="display: none;"></div>
+    </button>
+  </div>
+
+  <script>
+    const loader = document.getElementById('btnLoader');
+    const btnText = document.getElementById('btnText');
+    const payBtn = document.getElementById('payBtn');
+
+    payBtn.addEventListener('click', async function() {
+      const amount = document.getElementById('amountInput').value;
+      const name = document.getElementById('nameInput').value;
+      const email = document.getElementById('emailInput').value;
+      const phone = document.getElementById('phoneInput').value;
+
+      // Validation
+      if (!amount || !name || !email || !phone) {
+        alert('אנא מלא את כל השדות');
+        return;
+      }
+      if (isNaN(amount) || amount <= 0) {
+        alert('סכום לא תקין');
+        return;
+      }
+      if (!isValidEmail(email)) {
+        alert('כתובת דואר אלקטרוני לא תקינה');
+        return;
+      }
+      if (!isValidIsraeliPhone(phone)) {
+        alert('מספר טלפון ישראלי לא תקין');
+        return;
+      }
+
+      // UI State: Loading
+      loader.style.display = 'block';
+      btnText.textContent = 'מעבד...';
+      payBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/submit', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        }).then(response => response.json())
-          .then(data => {
-            document.getElementById('result').innerHTML = `<a href="${data.message}" target="_blank">View Cupon</a>`;
-            console.log(data);
-          });
-      });
-    </script>
-  </body>
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount, name, email, phone })
+        });
+
+        const data = await response.json();
+        
+        document.getElementById('result').innerHTML = `<a href="${data.message}" target="_blank">לחץ כאן לצפייה בקופון</a>`;
+      } catch (error) {
+        console.error("Error:", error);
+        alert("אירעה שגיאה בשליחת הנתונים");
+      } finally {
+        loader.style.display = 'none';
+        btnText.textContent = 'לתשלום';
+        payBtn.disabled = false;
+      }
+    });
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function isValidIsraeliPhone(phone) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      return /^05\d{8}$/.test(cleanPhone);
+    }
+  </script>
+</body>
 </html>

@@ -71,7 +71,7 @@ app.post("/api/submit", (req, res) => {
         const mailOptions = {
           from: process.env.EMAIL_USER,
           to: cupon.email,
-          subject: "Your Gratzia Coupon is Ready!\\n",
+          subject: "Your Gratzia Coupon is Ready!",
           text: `View it here: https://gratziacuponsapp.vercel.app/api/cupon?id=${cupon._id}`,
         };
 
@@ -112,12 +112,151 @@ app.get("/api/cupon", async (req, res) => {
       `Received cupon: Name=${cupon.name}, Email=${cupon.email}, Amount=${cupon.amount}, Phone=${cupon.phone}`,
     );
     res.send(
-      `${cupon.name} - ${cupon.email} - ${cupon.amount} - ${cupon.phone}`,
+      `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הקופון שלך</title>
+    <style>
+        body {
+            background-color: #fefff7;
+            color: #254728;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .coupon-card {
+          background: white;
+          width: 90%;
+          max-width: 450px;
+          padding: 50px 30px 30px 30px; /* Added more top padding to make room for the logo */
+          border-radius: 20px;
+          box-shadow: 0 15px 35px rgba(37, 71, 40, 0.1);
+          border: 2px dashed #99ae86;
+          text-align: center;
+          position: relative; /* This is the anchor for the logo */
+          overflow: hidden; /* Keeps the logo from "bleeding" out if it's too large */
+        }
+        /* Decorative punch-out circles on the sides */
+        .coupon-card::before, .coupon-card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 30px;
+            height: 30px;
+            background-color: #fefff7;
+            border-radius: 50%;
+        }
+        .coupon-card::before { left: -15px; transform: translateY(-50%); }
+        .coupon-card::after { right: -15px; transform: translateY(-50%); }
+
+        .logo {
+            color: #99ae86;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .amount {
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 10px 0;
+            color: #254728;
+        }
+        .currency {
+            font-size: 1.5rem;
+            vertical-align: middle;
+        }
+        .details-grid {
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+            padding-top: 20px;
+            text-align: right;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .detail-item label {
+            display: block;
+            font-size: 0.8rem;
+            color: #99ae86;
+            margin-bottom: 3px;
+        }
+        .detail-item span {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .footer-note {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        .coupon-logo {
+          position: absolute;
+          top: 15px;
+          left: 15px;
+          max-width: 90px; 
+          height: auto;
+          object-fit: contain;
+          opacity: 0.9; 
+        }
+        .print-btn {
+            margin-top: 20px;
+            background: #254728;
+            color: #fefff7;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        @media print {
+            .print-btn { display: none; }
+            body { background: white; }
+            .coupon-card { box-shadow: none; border: 2px dashed #99ae86; }
+        }
+    </style>
+</head>
+<body>
+    <div class="coupon-card">
+        <img src="/logo.jpg" alt="Gratzia Logo" class="coupon-logo">
+        <div class="amount">${cupon.amount}<span class="currency">₪</span></div>
+        <p>קופון אישי למימוש</p>
+        
+        <div class="details-grid">
+            <div class="detail-item">
+                <label>שם הלקוח</label>
+                <span>${cupon.name}</span>
+            </div>
+            <div class="detail-item">
+                <label>טלפון</label>
+                <span>${cupon.phone}</span>
+            </div>
+            <div class="detail-item" style="grid-column: span 2;">
+                <label>דואר אלקטרוני</label>
+                <span>${cupon.email}</span>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            יש להציג קופון זה בעת המימוש.
+        </div>
+        
+        <button class="print-btn" onclick="window.print()">שמור/הדפס קופון</button>
+    </div>
+</body>
+</html>`,
     );
   }
 });
 
-// app.listen(port, () => {
-//   console.log(`App listening on port ${port}`);
-// });
+app.get("/style", (req, res) => {
+  res.sendFile(__dirname + "/style.css");
+});
+
 module.exports = app;
