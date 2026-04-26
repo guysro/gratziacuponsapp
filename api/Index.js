@@ -34,7 +34,11 @@ app.post("/submit", (req, res) => {
   const cupon = new Cupon({ name, email, amount, phone });
   cupon
     .save()
-    .then(() => console.log(`Cupon saved to MongoDB: ${process.env.BASE_URL}/cupon?id=${cupon._id}`))
+    .then(() =>
+      console.log(
+        `Cupon saved to MongoDB: ${process.env.BASE_URL}/cupon?id=${cupon._id}`,
+      ),
+    )
     .catch((err) => console.error("Error saving cupon to MongoDB", err));
   console.log(
     `Received cupon: Name=${name}, Email=${email}, Amount=${amount}, Phone=${phone}`,
