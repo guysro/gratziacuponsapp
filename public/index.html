@@ -101,6 +101,30 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+  #errorMessage {
+    background-color: #fff1f1;
+    color: #b91c1c;
+    border: 1px solid #f87171;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    /* Smooth fade in */
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Optional: Highlight invalid inputs */
+  .input-error {
+      border-color: #f87171 !important;
+      background-color: #fffafa !important;
+  }
 </style>
     <link rel="stylesheet" href="style">
   </head>
@@ -119,12 +143,26 @@
       <span id="btnText">לתשלום</span>
       <div id="btnLoader" class="loader" style="display: none;"></div>
     </button>
+    <div id="errorMessage" style="display: none;"></div>
   </div>
 
   <script>
     const loader = document.getElementById('btnLoader');
     const btnText = document.getElementById('btnText');
     const payBtn = document.getElementById('payBtn');
+    const errorDiv = document.getElementById('errorMessage');
+
+
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function clearError() {
+      errorDiv.style.display = 'none';
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => input.classList.remove('input-error'));
+    }
 
     payBtn.addEventListener('click', async function() {
       const amount = document.getElementById('amountInput').value;
@@ -132,25 +170,26 @@
       const email = document.getElementById('emailInput').value;
       const phone = document.getElementById('phoneInput').value;
 
-      // Validation
       if (!amount || !name || !email || !phone) {
-        alert('אנא מלא את כל השדות');
+        showError('אנא מלא את כל השדות');
         return;
       }
       if (isNaN(amount) || amount <= 0) {
-        alert('סכום לא תקין');
+        document.getElementById('amountInput').classList.add('input-error');
+        showError('סכום לא תקין');
         return;
       }
       if (!isValidEmail(email)) {
-        alert('כתובת דואר אלקטרוני לא תקינה');
+        document.getElementById('emailInput').classList.add('input-error');
+        showError('כתובת דואר אלקטרוני לא תקינה');
         return;
       }
       if (!isValidIsraeliPhone(phone)) {
-        alert('מספר טלפון ישראלי לא תקין');
+        document.getElementById('phoneInput').classList.add('input-error');
+        showError('מספר טלפון ישראלי לא תקין');
         return;
       }
 
-      // UI State: Loading
       loader.style.display = 'block';
       btnText.textContent = 'מעבד...';
       payBtn.disabled = true;
