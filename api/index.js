@@ -72,7 +72,7 @@ app.post("/api/submit", (req, res) => {
           from: process.env.EMAIL_USER,
           to: cupon.email,
           subject: "Your Gratzia Coupon is Ready!\\n",
-          text: `View it here: https://gratziacuponsapp.vercel.app/api/coupon?id=${cupon._id}`,
+          text: `View it here: https://gratziacuponsapp.vercel.app/api/cupon?id=${cupon._id}`,
         };
 
         transporter
