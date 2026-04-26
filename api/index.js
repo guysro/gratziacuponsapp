@@ -71,7 +71,7 @@ app.post("/api/submit", (req, res) => {
         const mailOptions = {
           from: process.env.EMAIL_USER,
           to: cupon.email,
-          subject: "Your Gratzia Coupon is Ready!",
+          subject: "Your Gratzia Coupon is Ready!\\n",
           text: `View it here: https://gratziacuponsapp.vercel.app/api/coupon?id=${cupon._id}`,
         };
 
