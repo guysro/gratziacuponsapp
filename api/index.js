@@ -35,7 +35,7 @@ app.post("/api/submit", (req, res) => {
     .save()
     .then(() => {
       res.json({
-        message: `${process.env.BASE_URL}/api/cupon?id=${cupon._id}`,
+        message: `/api/cupon?id=${cupon._id}`,
       });
 
       console.log(
