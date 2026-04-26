@@ -126,7 +126,7 @@ app.get("/api/cupon", async (req, res) => {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            min-height: 100dvh;
             margin: 0;
         }
         .coupon-card {
