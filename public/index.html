@@ -1,0 +1,35 @@
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8">
+    <title>gratzia cupon</title>
+  </head>
+  <body>
+    <h1>יצירת קופון</h1>
+    <input type="text" name="amount" id="amountInput" placeholder="הכנס סכום">
+    <input type="text" name="name" id="nameInput" placeholder="הכנס שם">
+    <input type="text" name="email" id="emailInput" placeholder="הכנס דואר אלקטרוני">
+    <input type="text" name="phone" id="phoneInput" placeholder="הכנס מספר טלפון">
+    <button id="payBtn">לתשלום</button>
+    <script>
+      document.getElementById('payBtn').addEventListener('click', function() {
+        const amount = document.getElementById('amountInput').value;
+        const name = document.getElementById('nameInput').value;
+        const email = document.getElementById('emailInput').value;
+        const phone = document.getElementById('phoneInput').value;
+        const data = {
+          amount: amount,
+          name: name,
+          email: email,
+          phone: phone
+        };
+        fetch('/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+      });
+    </script>
+  </body>
+</html>
