@@ -1,7 +1,7 @@
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
-require("dotenv").config({ path: "app.env" });
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 
@@ -33,24 +33,19 @@ app.post("/api/submit", (req, res) => {
   const cupon = new Cupon({ name, email, amount, phone });
   cupon
     .save()
-    .then(() =>
+    .then(() => {
+      res.json({
+        message: `${process.env.BASE_URL}/api/cupon?id=${cupon._id}`,
+      });
+
       console.log(
         `Cupon saved to MongoDB: ${process.env.BASE_URL}/api/cupon?id=${cupon._id}`,
-      ),
-    )
+      );
+    })
     .catch((err) => console.error("Error saving cupon to MongoDB", err));
   console.log(
     `Received cupon: Name=${name}, Email=${email}, Amount=${amount}, Phone=${phone}`,
   );
-  res.json({ message: "Cupon received!" });
-});
-
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Route not found in Express",
-    theUrlYouRequested: req.url,
-    theMethod: req.method
-  });
 });
 
 app.get("/api/cupon", async (req, res) => {

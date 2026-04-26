@@ -9,6 +9,7 @@
     <input type="text" name="name" id="nameInput" placeholder="הכנס שם">
     <input type="text" name="email" id="emailInput" placeholder="הכנס דואר אלקטרוני">
     <input type="text" name="phone" id="phoneInput" placeholder="הכנס מספר טלפון">
+    <div id="result"></div>
     <button id="payBtn">לתשלום</button>
     <script>
       document.getElementById('payBtn').addEventListener('click', function() {
@@ -28,7 +29,11 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
-        });
+        }).then(response => response.json())
+          .then(data => {
+            document.getElementById('result').innerHTML = `<a href="${data.message}" target="_blank">View Cupon</a>`;
+            console.log(data);
+          });
       });
     </script>
   </body>
