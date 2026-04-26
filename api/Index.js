@@ -6,7 +6,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 const cuponSchema = new mongoose.Schema({
   name: String,
@@ -29,14 +28,14 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
-app.post("/submit", (req, res) => {
+app.post("/api/submit", (req, res) => {
   const { name, email, amount, phone } = req.body;
   const cupon = new Cupon({ name, email, amount, phone });
   cupon
     .save()
     .then(() =>
       console.log(
-        `Cupon saved to MongoDB: ${process.env.BASE_URL}/cupon?id=${cupon._id}`,
+        `Cupon saved to MongoDB: ${process.env.BASE_URL}/api/cupon?id=${cupon._id}`,
       ),
     )
     .catch((err) => console.error("Error saving cupon to MongoDB", err));
@@ -46,7 +45,7 @@ app.post("/submit", (req, res) => {
   res.json({ message: "Cupon received!" });
 });
 
-app.get("/cupon", async (req, res) => {
+app.get("/api/cupon", async (req, res) => {
   const cuponId = req.query.id;
   console.log(`Received request for cupon with ID: ${cuponId}`);
   const cupon = await Cupon.findById(cuponId);
