@@ -48,6 +48,10 @@ app.post("/api/submit", (req, res) => {
   );
 });
 
+app.get('/api', (req, res) => {
+  res.send('✅ The Express backend is officially awake!');
+});
+
 app.get("/api/cupon", async (req, res) => {
   const cuponId = req.query.id;
   console.log(`Received request for cupon with ID: ${cuponId}`);
