@@ -16,13 +16,36 @@ const cuponSchema = new mongoose.Schema({
 
 const Cupon = mongoose.model("Cupon", cuponSchema);
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("Could not connect to MongoDB", err));
+// mongoose
+//   .connect(process.env.MONGODB_URI)
+//   .then(() => console.log("Connected to MongoDB"))
+//   .catch((err) => console.error("Could not connect to MongoDB", err));
 
 // app.use(express.static("public"));
 app.use(express.json());
+
+app.use(async (req, res, next) => {
+  // 1. Check if we already have a live, healthy connection
+  // readyState 1 means "connected"
+  if (mongoose.connection.readyState === 1) {
+    return next(); // The connection is good, proceed to the route!
+  }
+
+  // 2. If not, establish a new connection
+  try {
+    console.log('🔌 Waking up database connection...');
+    await mongoose.connect(process.env.MONGODB_URI, {
+      // This tells Mongoose to crash after 5 seconds instead of waiting forever
+      serverSelectionTimeoutMS: 5000 
+    });
+    console.log('✅ Connected to MongoDB Atlas');
+    next(); // Proceed to the route
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+    // Send an immediate error back to the frontend instead of timing out
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
