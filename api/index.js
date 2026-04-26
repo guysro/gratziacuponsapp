@@ -117,7 +117,7 @@ app.get("/api/cupon", async (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>הקופון שלך</title>
+    <title>השובר שלך</title>
     <style>
         body {
             background-color: #fefff7;
@@ -201,10 +201,11 @@ app.get("/api/cupon", async (req, res) => {
           position: absolute;
           top: 15px;
           left: 15px;
-          max-width: 90px; 
+          max-width: 8dvw; 
           height: auto;
           object-fit: contain;
           opacity: 0.9; 
+          
         }
         .print-btn {
             margin-top: 20px;
@@ -227,7 +228,7 @@ app.get("/api/cupon", async (req, res) => {
     <div class="coupon-card">
         <img src="/logo.jpg" alt="Gratzia Logo" class="coupon-logo">
         <div class="amount">${cupon.amount}<span class="currency">₪</span></div>
-        <p>קופון אישי למימוש</p>
+        <p>שובר אישי למימוש</p>
         
         <div class="details-grid">
             <div class="detail-item">
@@ -245,10 +246,10 @@ app.get("/api/cupon", async (req, res) => {
         </div>
 
         <div class="footer-note">
-            יש להציג קופון זה בעת המימוש.
+            יש להציג שובר זה בעת המימוש.
         </div>
         
-        <button class="print-btn" onclick="window.print()">שמור/הדפס קופון</button>
+        <button class="print-btn" onclick="window.print()">שמור/הדפס שובר</button>
     </div>
 </body>
 </html>`,

@@ -7,8 +7,9 @@
   body {
     background-color: #fefff7;
     color: #254728;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
@@ -126,12 +127,22 @@
       border-color: #f87171 !important;
       background-color: #fffafa !important;
   }
+  .coupon-logo {
+    position: absolute;
+    top: 35px;
+    left: 35px;
+    max-width: 180px; 
+    height: auto;
+    object-fit: contain;
+    opacity: 0.9; 
+  }
 </style>
     <link rel="stylesheet" href="style">
   </head>
   <body>
+  <img src="/logo.jpg" alt="Gratzia Logo" class="coupon-logo">
   <div class="container">
-    <h1>יצירת קופון</h1>
+    <h1>יצירת שובר</h1>
     
     <input type="text" id="amountInput" placeholder="סכום לתשלום">
     <input type="text" id="nameInput" placeholder="שם מלא">
@@ -205,7 +216,7 @@
 
         const data = await response.json();
         
-        document.getElementById('result').innerHTML = `<a href="${data.message}" target="_blank">לחץ כאן לצפייה בקופון</a>`;
+        document.getElementById('result').innerHTML = `<a href="${data.message}" target="_blank">לחץ כאן לצפייה בשובר</a>`;
       } catch (error) {
         console.error("Error:", error);
         alert("אירעה שגיאה בשליחת הנתונים");
