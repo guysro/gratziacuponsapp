@@ -4,6 +4,7 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer"); // 1. Import nodemailer
 
 const app = express();
 
@@ -16,34 +17,40 @@ const cuponSchema = new mongoose.Schema({
 
 const Cupon = mongoose.model("Cupon", cuponSchema);
 
-// mongoose
-//   .connect(process.env.MONGODB_URI)
-//   .then(() => console.log("Connected to MongoDB"))
-//   .catch((err) => console.error("Could not connect to MongoDB", err));
-
-// app.use(express.static("public"));
 app.use(express.json());
 
-app.use(async (req, res, next) => {
-  // 1. Check if we already have a live, healthy connection
-  // readyState 1 means "connected"
-  if (mongoose.connection.readyState === 1) {
-    return next(); // The connection is good, proceed to the route!
-  }
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-  // 2. If not, establish a new connection
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error("❌ Nodemailer Auth Error:", error);
+  } else {
+    console.log("✅ Server is ready to take our messages");
+  }
+});
+
+app.use(async (req, res, next) => {
+  // check if mongoose connection is already established
+  if (mongoose.connection.readyState === 1) {
+    return next();
+  }
+  // if not, try to connect to the database
   try {
-    console.log('🔌 Waking up database connection...');
+    console.log("Waking up database connection...");
     await mongoose.connect(process.env.MONGODB_URI, {
-      // This tells Mongoose to crash after 5 seconds instead of waiting forever
-      serverSelectionTimeoutMS: 5000 
+      serverSelectionTimeoutMS: 5000,
     });
-    console.log('✅ Connected to MongoDB Atlas');
-    next(); // Proceed to the route
+    console.log("✅ Connected to MongoDB Atlas");
+    next();
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    // Send an immediate error back to the frontend instead of timing out
-    res.status(500).json({ error: 'Database connection failed' });
+    console.error("Database connection failed:", error.message);
+    res.status(500).json({ error: "Database connection failed" });
   }
 });
 
@@ -57,22 +64,40 @@ app.post("/api/submit", (req, res) => {
   cupon
     .save()
     .then(() => {
-      res.json({
-        message: `/api/cupon?id=${cupon._id}`,
-      });
-
       console.log(
         `Cupon saved to MongoDB: ${process.env.BASE_URL}/api/cupon?id=${cupon._id}`,
       );
+      try {
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: cupon.email,
+          subject: "Your Gratzia Coupon is Ready!",
+          text: `View it here: https://gratziacuponsapp.vercel.app/api/coupon?id=${cupon._id}`,
+        };
+
+        transporter
+          .sendMail(mailOptions)
+          .then(() => {
+            console.log(`Email sent to ${cupon.email}`);
+            res.json({
+              message: `/api/cupon?id=${cupon._id}`,
+            });
+          })
+          .catch((err) => {
+            console.error(`Error sending email to ${cupon.email}:`, err);
+          });
+      } catch (err) {
+        console.error("Error sending email:", err);
+      }
     })
     .catch((err) => console.error("Error saving cupon to MongoDB", err));
   console.log(
-    `Received cupon: Name=${name}, Email=${email}, Amount=${amount}, Phone=${phone}`,
+    `Received cupon: Name=${name}, Email=${cupon.email}, Amount=${amount}, Phone=${phone}`,
   );
 });
 
-app.get('/api', (req, res) => {
-  res.send('✅ The Express backend is officially awake!');
+app.get("/api", (req, res) => {
+  res.send("✅ The Express backend is officially awake!");
 });
 
 app.get("/api/cupon", async (req, res) => {
