@@ -45,6 +45,14 @@ app.post("/api/submit", (req, res) => {
   res.json({ message: "Cupon received!" });
 });
 
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Route not found in Express",
+    theUrlYouRequested: req.url,
+    theMethod: req.method
+  });
+});
+
 app.get("/api/cupon", async (req, res) => {
   const cuponId = req.query.id;
   console.log(`Received request for cupon with ID: ${cuponId}`);
