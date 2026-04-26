@@ -140,6 +140,7 @@ app.get("/api/cupon", async (req, res) => {
           text-align: center;
           position: relative; /* This is the anchor for the logo */
           overflow: hidden; /* Keeps the logo from "bleeding" out if it's too large */
+          margin: 30px;
         }
         /* Decorative punch-out circles on the sides */
         .coupon-card::before, .coupon-card::after {
