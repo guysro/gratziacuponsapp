@@ -131,7 +131,7 @@
     position: absolute;
     top: 35px;
     left: 35px;
-    max-width: 10dvw; 
+    max-width: 130px; 
     height: auto;
     object-fit: contain;
     opacity: 0.9; 
@@ -144,10 +144,10 @@
   <div class="container">
     <h1>יצירת שובר</h1>
     
-    <input type="text" id="amountInput" placeholder="סכום לתשלום">
-    <input type="text" id="nameInput" placeholder="שם מלא">
+    <input type="text" id="amountInput" placeholder="סכום רצוי בשקלים">
+    <input type="text" id="nameInput" placeholder="שם על השובר">
     <input type="email" id="emailInput" placeholder="דואר אלקטרוני">
-    <input type="tel" id="phoneInput" placeholder="מספר טלפון (05...)">
+    <input type="tel" id="phoneInput" placeholder="מספר טלפון">
 
     <div id="result"></div>
 
@@ -155,7 +155,7 @@
       <span id="btnText">לתשלום</span>
       <div id="btnLoader" class="loader" style="display: none;"></div>
     </button>
-    <div id="errorMessage" style="display: none;"></div>
+    <div id="errorMessage" style="display: none; margin-top: 10px;"></div>
   </div>
 
   <script>

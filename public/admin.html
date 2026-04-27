@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ניהול קופונים - Gratzia</title>
+    <style>
+      :root {
+        --bg: #fefff7;
+        --text: #254728;
+        --accent: #99ae86;
+      }
+      body {
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      .admin-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(37, 71, 40, 0.05);
+
+        display: flex;
+        flex-direction: column;
+        height: calc(100dvh - 40px); /* Full height minus margins */
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0; /* Prevents the header from squishing */
+        margin-bottom: 1rem;
+      }
+      .search-box {
+        padding: 10px;
+        width: 300px;
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: right;
+      }
+      th {
+        background-color: var(--bg);
+        padding: 15px;
+        cursor: pointer;
+        border-bottom: 2px solid var(--accent);
+      }
+      th:hover {
+        background-color: #f0f2eb;
+      }
+      td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+      }
+      tr:hover {
+        background-color: #fafbf5;
+      }
+      .badge {
+        background: var(--accent);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+      }
+      .controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .reload-btn {
+        background-color: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--accent);
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .reload-btn:hover {
+        background-color: var(--accent);
+        color: white;
+      }
+
+      .reload-btn:active .icon {
+        transform: rotate(180deg);
+      }
+
+      .icon {
+        transition: transform 2.4s ease;
+        display: inline-block;
+      }
+      .table-container {
+        flex-grow: 1; /* Makes the table area fill the rest of the box */
+        overflow-y: auto; /* Enables vertical scrolling only here */
+        border: 1px solid #eee;
+        border-radius: 8px;
+        position: relative;
+        margin: 1rem;
+      }
+
+      /* The Overlay */
+      .table-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(
+          254,
+          255,
+          247,
+          0.7
+        ); /* Your cream color with transparency */
+        backdrop-filter: blur(2px); /* Modern blur effect */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+      }
+
+      /* The Spinner inside the table */
+      .loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #99ae86;
+        border-top: 4px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Optional: Fade the table body slightly during load */
+      .loading-fade {
+        opacity: 0.4;
+        transition: opacity 0.3s ease;
+      }
+      dialog::backdrop {
+        background-color: rgba(37, 71, 40, 0.4);
+        backdrop-filter: blur(4px);
+      }
+
+      dialog {
+        border: 2px solid var(--accent);
+        border-radius: 15px;
+        padding: 0;
+        width: 90%;
+        max-width: 400px;
+        background: var(--bg);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      }
+
+      .dialog-content {
+        padding: 20px;
+        text-align: right;
+      }
+
+      .dialog-content h2 {
+        margin-top: 0;
+        color: var(--text);
+      }
+
+      .close-btn {
+        margin-top: 20px;
+        width: 100%;
+        background-color: var(--text);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      /* Action Button in Table */
+      .view-btn {
+        background-color: var(--accent);
+        color: white;
+        border: none;
+        padding: 5px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+
+      .view-btn:hover {
+        filter: brightness(0.9);
+      }
+      #useBtn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #useBtnLoader {
+        border: 2px solid #fefff7;
+        border-top: 2px solid transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-container">
+      <header>
+        <h1>רשימת שוברים</h1>
+      </header>
+      <div class="controls">
+        <button
+          onclick="document.getElementById('createDialog').showModal()"
+          class="view-btn"
+          style="background-color: #254728; font-size: 1rem; padding: 10px 15px"
+        >
+          צור שובר חדש
+        </button>
+        <input
+          type="text"
+          id="searchInput"
+          class="search-box"
+          placeholder="חיפוש..."
+        />
+        <button onclick="fetchData()" class="reload-btn" id="reloadBtn">
+          רענן נתונים
+        </button>
+      </div>
+      <div class="table-container" style="position: relative">
+        <div id="tableLoader" class="table-overlay" style="display: none">
+          <div class="loader-spinner"></div>
+        </div>
+
+        <table id="couponTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">תאריך</th>
+              <th onclick="sortTable(1)">שם</th>
+              <th onclick="sortTable(2)">אימייל</th>
+              <th onclick="sortTable(3)">טלפון</th>
+              <th onclick="sortTable(4)">סכום</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <dialog id="couponDialog">
+        <div class="dialog-content">
+          <h2>פרטי שובר</h2>
+          <hr />
+          <div id="dialogDetails"></div>
+
+          <div
+            style="
+              margin-top: 20px;
+              border-top: 1px solid #ddd;
+              padding-top: 15px;
+            "
+          >
+            <label>מימוש סכום (₪):</label>
+            <div style="display: flex; gap: 10px; margin-top: 5px">
+              <input
+                type="number"
+                id="useAmountInput"
+                placeholder="סכום להורדה"
+              />
+              <button
+                id="useBtn"
+                class="view-btn"
+                style="background-color: #254728; min-width: 80px"
+              >
+                <span id="useBtnText">ממש</span>
+                <div
+                  id="useBtnLoader"
+                  class="loader"
+                  style="
+                    display: none;
+                    width: 12px;
+                    height: 12px;
+                    border-width: 2px;
+                  "
+                ></div>
+              </button>
+            </div>
+            <p
+              id="dialogStatus"
+              style="
+                font-size: 0.9rem;
+                margin-top: 10px;
+                padding: 8px;
+                border-radius: 5px;
+                display: none;
+              "
+            ></p>
+          </div>
+
+          <button
+            onclick="document.getElementById('couponDialog').close()"
+            class="close-btn"
+          >
+            סגור
+          </button>
+        </div>
+      </dialog>
+      <dialog id="createDialog">
+        <div class="dialog-content">
+          <h2>יצירת שובר ידני</h2>
+          <hr />
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 10px;
+              margin-top: 15px;
+              text-align: right;
+            "
+          >
+            <input
+              type="text"
+              id="newAmount"
+              placeholder="סכום (₪)*"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #99ae86;
+                border-radius: 5px;
+              "
+            />
+            <input
+              type="text"
+              id="newName"
+              placeholder="שם הלקוח*"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #99ae86;
+                border-radius: 5px;
+              "
+            />
+            <input
+              type="email"
+              id="newEmail"
+              placeholder="דואר אלקטרוני*"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #99ae86;
+                border-radius: 5px;
+              "
+            />
+            <input
+              type="tel"
+              id="newPhone"
+              placeholder="מספר טלפון (05...)*"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #99ae86;
+                border-radius: 5px;
+              "
+            />
+            <textarea
+              id="newCustomMessage"
+              placeholder="הודעה אישית למייל (אופציונלי)"
+              rows="3"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #99ae86;
+                border-radius: 5px;
+                resize: vertical;
+                font-family: inherit;
+              "
+            ></textarea>
+
+            <button
+              id="adminCreateBtn"
+              class="view-btn"
+              style="
+                background-color: #254728;
+                padding: 12px;
+                margin-top: 10px;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+              "
+            >
+              <span id="createBtnText">צור ושלח למייל</span>
+              <div
+                id="createBtnLoader"
+                class="loader"
+                style="
+                  display: none;
+                  width: 14px;
+                  height: 14px;
+                  border-width: 2px;
+                "
+              ></div>
+            </button>
+            <p
+              id="createStatus"
+              style="
+                font-size: 0.9rem;
+                margin-top: 5px;
+                padding: 8px;
+                border-radius: 5px;
+                display: none;
+                text-align: center;
+              "
+            ></p>
+          </div>
+          <button
+            onclick="document.getElementById('createDialog').close()"
+            class="close-btn"
+          >
+            ביטול
+          </button>
+        </div>
+      </dialog>
+    </div>
+    <script>
+      function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+
+      function isValidIsraeliPhone(phone) {
+        const cleanPhone = phone.replace(/\D/g, "");
+        return /^05\d{8}$/.test(cleanPhone);
+      }
+      // Real-time Search Function
+      document
+        .getElementById("searchInput")
+        .addEventListener("keyup", function () {
+          const filter = this.value.toLowerCase();
+          const rows = document.querySelectorAll("#tableBody tr");
+
+          rows.forEach((row) => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? "" : "none";
+          });
+        });
+
+      // Simple Sort Function
+      function sortTable(n) {
+        const table = document.getElementById("couponTable");
+        let switching = true;
+        let dir = "asc";
+        let switchcount = 0;
+
+        while (switching) {
+          switching = false;
+          const rows = table.rows;
+          for (var i = 1; i < rows.length - 1; i++) {
+            var shouldSwitch = false;
+            var x = rows[i].getElementsByTagName("TD")[n];
+            var y = rows[i + 1].getElementsByTagName("TD")[n];
+
+            if (dir == "asc") {
+              if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                shouldSwitch = true;
+                break;
+              }
+            } else if (dir == "desc") {
+              if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                shouldSwitch = true;
+                break;
+              }
+            }
+          }
+          if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+          } else {
+            if (switchcount == 0 && dir == "asc") {
+              dir = "desc";
+              switching = true;
+            }
+          }
+        }
+      }
+      async function fetchData() {
+        const icon = document.getElementById("spinIcon");
+        const tableBody = document.getElementById("tableBody");
+        const tableLoader = document.getElementById("tableLoader");
+
+        tableLoader.style.display = "flex";
+        tableBody.classList.add("loading-fade");
+
+        try {
+          const response = await fetch("/api/admin-data");
+          if (response.ok) {
+            const coupons = await response.json();
+            await new Promise((resolve) => setTimeout(resolve, 400));
+            tableBody.innerHTML = "";
+
+            console.log("📊 נתונים שהתקבלו:", coupons);
+            tableBody.innerHTML = "";
+            coupons.forEach((c) => {
+              if (c) {
+                const row = `<tr>
+                              <td>${new Date(c.createdAt).toLocaleDateString("he-IL")}</td>
+                              <td>${c.name}</td>
+                              <td>${c.email}</td>
+                              <td>${c.phone}</td>
+                              <td><strong>${c.amount} ₪</strong></td>
+                              <td>
+                                <button class="view-btn" onclick='openDetails(${JSON.stringify(c)})'>צפה</button>
+                            </td>
+                          </tr>`;
+                tableBody.insertAdjacentHTML("beforeend", row);
+              }
+            });
+
+            console.log("✅ נתונים עודכנו בהצלחה");
+          } else {
+            console.error("❌ שגיאה בטעינת הנתונים:", response.statusText);
+            alert("נכשל בטעינת הנתונים");
+          }
+        } catch (error) {
+          console.error("❌ שגיאה ברענון הנתונים:", error);
+          alert("נכשל ברענון הנתונים");
+        } finally {
+          tableLoader.style.display = "none";
+          tableBody.classList.remove("loading-fade");
+        }
+      }
+      fetchData();
+
+      function setDialogStatus(message, isError = false) {
+        const statusMsg = document.getElementById("dialogStatus");
+        statusMsg.textContent = message;
+        statusMsg.style.display = "block";
+        statusMsg.style.backgroundColor = isError ? "#fff1f1" : "#f0fdf4";
+        statusMsg.style.color = isError ? "#b91c1c" : "#166534";
+        statusMsg.style.border = `1px solid ${isError ? "#f87171" : "#bbf7d0"}`;
+      }
+
+      let currentEditingId = null;
+      let currentMaxAmount = 0;
+
+      function openDetails(coupon) {
+        currentEditingId = coupon._id;
+        currentMaxAmount = coupon.amount;
+
+        const dialog = document.getElementById("couponDialog");
+        const details = document.getElementById("dialogDetails");
+        const statusMsg = document.getElementById("dialogStatus"); // <-- Fixed reference
+        const input = document.getElementById("useAmountInput");
+        const useBtn = document.getElementById("useBtn");
+        const btnText = document.getElementById("useBtnText");
+        const btnLoader = document.getElementById("useBtnLoader");
+
+        // 1. Reset everything when opening a new coupon
+        statusMsg.style.display = "none";
+        input.value = "";
+
+        // Reset button state just in case it was closed while loading
+        useBtn.disabled = false;
+        btnText.style.display = "block";
+        btnLoader.style.display = "none";
+
+        // 2. Format the date
+        const date = new Date(coupon.createdAt).toLocaleDateString("he-IL", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+
+        // 3. Inject details
+        details.innerHTML = `
+        <p><strong>שם:</strong> ${coupon.name}</p>
+        <p><strong>אימייל:</strong> ${coupon.email}</p>
+        <p><strong>טלפון:</strong> ${coupon.phone}</p>
+        <p><strong>תאריך:</strong> ${date}</p>
+        <p><strong>יתרה נוכחית:</strong> <span style="font-size: 1.2rem; color: #254728;">${coupon.amount} ₪</span></p>
+    `;
+
+        dialog.showModal();
+      }
+
+      document.getElementById("useBtn").addEventListener("click", async () => {
+        const subtractAmount = parseFloat(
+          document.getElementById("useAmountInput").value,
+        );
+        const useBtn = document.getElementById("useBtn");
+        const btnText = document.getElementById("useBtnText");
+        const btnLoader = document.getElementById("useBtnLoader");
+        const statusMsg = document.getElementById("dialogStatus");
+
+        // Reset status
+        statusMsg.style.display = "none";
+
+        // Validation
+        if (!subtractAmount || subtractAmount <= 0) {
+          setDialogStatus("אנא הכנס סכום תקין", true);
+          return;
+        }
+        if (subtractAmount > currentMaxAmount) {
+          setDialogStatus("הסכום להורדה גבוה מהיתרה!", true);
+          return;
+        }
+
+        // UI State: Loading
+        useBtn.disabled = true;
+        btnText.style.display = "none";
+        btnLoader.style.display = "block";
+
+        try {
+          const response = await fetch("/api/use-coupon", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: currentEditingId, subtractAmount }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            setDialogStatus(data.message, false);
+            // Wait 1.5 seconds so the user can actually read the success message
+            setTimeout(() => {
+              document.getElementById("couponDialog").close();
+              fetchData(); // Refresh table
+            }, 1500);
+          } else {
+            setDialogStatus(data.error, true);
+          }
+        } catch (err) {
+          setDialogStatus("תקלה בתקשורת עם השרת", true);
+        } finally {
+          // UI State: Reset
+          useBtn.disabled = false;
+          btnText.style.display = "block";
+          btnLoader.style.display = "none";
+        }
+      });
+
+      function setCreateStatus(message, isError = false) {
+        const statusMsg = document.getElementById("createStatus");
+        statusMsg.textContent = message;
+        statusMsg.style.display = "block";
+        statusMsg.style.backgroundColor = isError ? "#fff1f1" : "#f0fdf4";
+        statusMsg.style.color = isError ? "#b91c1c" : "#166534";
+        statusMsg.style.border = `1px solid ${isError ? "#f87171" : "#bbf7d0"}`;
+      }
+
+      document
+        .getElementById("adminCreateBtn")
+        .addEventListener("click", async () => {
+          // 1. Get values
+          const amount = document.getElementById("newAmount").value;
+          const name = document.getElementById("newName").value;
+          const email = document.getElementById("newEmail").value;
+          const phone = document.getElementById("newPhone").value;
+          const customMessage =
+            document.getElementById("newCustomMessage").value;
+
+          const btn = document.getElementById("adminCreateBtn");
+          const text = document.getElementById("createBtnText");
+          const loader = document.getElementById("createBtnLoader");
+
+          // Reset status
+          document.getElementById("createStatus").style.display = "none";
+
+          // 2. Validation
+          if (!amount || !name || !email || !phone) {
+            setCreateStatus("אנא מלא את כל שדות החובה", true);
+            return;
+          }
+          if (isNaN(amount) || amount <= 0) {
+            setCreateStatus("סכום לא תקין", true);
+            return;
+          }
+          // Assuming you have these helpers in your admin script too!
+          if (!isValidEmail(email)) {
+            setCreateStatus("כתובת דואר אלקטרוני לא תקינה", true);
+            return;
+          }
+          if (!isValidIsraeliPhone(phone)) {
+            setCreateStatus("מספר טלפון ישראלי לא תקין", true);
+            return;
+          }
+
+          // 3. Loading State
+          btn.disabled = true;
+          text.style.display = "none";
+          loader.style.display = "block";
+
+          try {
+            // 4. Send to Backend
+            const response = await fetch("/api/admin/create-coupon", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amount,
+                name,
+                email,
+                phone,
+                customMessage,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              setCreateStatus(data.message, false);
+
+              // Wait a moment, then close, refresh table, and clear inputs
+              setTimeout(() => {
+                document.getElementById("createDialog").close();
+                fetchData();
+                document.getElementById("newAmount").value = "";
+                document.getElementById("newName").value = "";
+                document.getElementById("newEmail").value = "";
+                document.getElementById("newPhone").value = "";
+                document.getElementById("newCustomMessage").value = "";
+              }, 1500);
+            } else {
+              setCreateStatus(data.error || "שגיאה ביצירת השובר", true);
+            }
+          } catch (error) {
+            setCreateStatus("תקלה בתקשורת עם השרת", true);
+          } finally {
+            if (document.getElementById("createDialog").open) {
+              btn.disabled = false;
+              text.style.display = "block";
+              loader.style.display = "none";
+            }
+          }
+        });
+    </script>
+  </body>
+</html>

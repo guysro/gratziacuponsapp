@@ -13,6 +13,7 @@ const cuponSchema = new mongoose.Schema({
   email: String,
   amount: Number,
   phone: String,
+  createdAt: { type: Date, default: Date.now },
 });
 
 const Cupon = mongoose.model("Cupon", cuponSchema);
@@ -34,6 +35,22 @@ transporter.verify(function (error, success) {
     console.log("✅ Server is ready to take our messages");
   }
 });
+
+const auth = require("basic-auth");
+
+const adminAuth = (req, res, next) => {
+  const user = auth(req);
+  if (
+    user &&
+    user.name === process.env.ADMIN_USERNAME &&
+    user.pass === process.env.ADMIN_PASSWORD
+  ) {
+    return next();
+  } else {
+    res.set("WWW-Authenticate", 'Basic realm="example"');
+    return res.status(401).send("Authentication required.");
+  }
+};
 
 app.use(async (req, res, next) => {
   // check if mongoose connection is already established
@@ -57,10 +74,33 @@ app.use(async (req, res, next) => {
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
+app.get("/api/admin", adminAuth, (req, res) => {
+  res.sendFile(
+    __dirname.substring(0, __dirname.lastIndexOf("\\")) + "/public/admin.html",
+  );
+});
 
 app.post("/api/submit", (req, res) => {
   const { name, email, amount, phone } = req.body;
-  const cupon = new Cupon({ name, email, amount, phone });
+  const cupon = new Cupon({
+    name,
+    email,
+    amount,
+    phone,
+    createdAt: new Date(),
+  });
+  const emailText = `שלום ${name},
+
+תודה שרכשת שובר מגרציא!
+השובר שלך על סך ${amount} ₪ הופק בהצלחה ומוכן לשימוש.
+
+לצפייה, שמירה או הדפסה של השובר שלך, יש ללחוץ על הקישור הבא:
+https://gratziacuponsapp.vercel.app/api/cupon/${cupon._id}
+
+* יש להציג שובר זה (במכשיר הנייד או מודפס) בעת המימוש.
+
+נשמח לראותך בקרוב,
+צוות גרציא`;
   cupon
     .save()
     .then(() => {
@@ -71,8 +111,8 @@ app.post("/api/submit", (req, res) => {
         const mailOptions = {
           from: process.env.EMAIL_USER,
           to: cupon.email,
-          subject: "Your Gratzia Coupon is Ready!",
-          text: `View it here: https://gratziacuponsapp.vercel.app/api/cupon?id=${cupon._id}`,
+          subject: "השובר שלך מגרציא מוכן!",
+          text: emailText,
         };
 
         transporter
@@ -243,6 +283,10 @@ app.get("/api/cupon", async (req, res) => {
                 <label>דואר אלקטרוני</label>
                 <span>${cupon.email}</span>
             </div>
+            <div class="detail-item" style="grid-column: span 2;">
+                <label>תאריך יצירה</label>
+                <span>${new Date(cupon.createdAt).toLocaleDateString("he-IL")}</span>
+            </div>
         </div>
 
         <div class="footer-note">
@@ -259,6 +303,77 @@ app.get("/api/cupon", async (req, res) => {
 
 app.get("/style", (req, res) => {
   res.sendFile(__dirname + "/style.css");
+});
+app.get("/api/admin-data", async (req, res) => {
+  try {
+    const coupons = await Cupon.find({});
+    res.json(coupons);
+  } catch (error) {
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.post("/api/use-coupon", async (req, res) => {
+  const { id, subtractAmount } = req.body;
+
+  try {
+    const coupon = await Cupon.findById(id);
+    if (!coupon) return res.status(404).json({ error: "הקופון לא נמצא" });
+
+    if (subtractAmount > coupon.amount) {
+      return res.status(400).json({ error: "הסכום להורדה גדול מיתרת הקופון" });
+    }
+
+    const newAmount = coupon.amount - subtractAmount;
+
+    if (newAmount <= 0) {
+      await Cupon.findByIdAndDelete(id);
+      return res.json({ message: "הקופון נוצל במלואו ונמחק", deleted: true });
+    } else {
+      coupon.amount = newAmount;
+      await coupon.save();
+      return res.json({
+        message: `היתרה עודכנה ל- ${newAmount} ₪`,
+        deleted: false,
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "שגיאה בעדכון הנתונים" });
+  }
+});
+
+app.post("/api/admin/create-coupon", async (req, res) => {
+  const { name, email, phone, amount, customMessage } = req.body;
+
+  try {
+    // 1. Save to Database
+    const newCoupon = await Cupon.create({ name, email, phone, amount });
+
+    // 2. Prepare the custom email text
+    let emailText = `שלום ${name},\n\nקיבלת שובר חדש ממסעדת גרציא על סך ${amount} ₪!\n`;
+
+    if (customMessage && customMessage.trim() !== "") {
+      emailText += `\nהודעה מצורפת:\n"${customMessage}"\n`;
+    }
+
+    emailText += `\nלצפייה בשובר שלך: https://gratziacuponsapp.vercel.app/api/cupon/${newCoupon._id}`;
+
+    // 3. Send the Email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "קיבלת שובר מתנה! - Gratzia",
+      text: emailText,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    // 4. Send success response
+    res.status(200).json({ message: "השובר נוצר והמייל נשלח בהצלחה!" });
+  } catch (error) {
+    console.error("Admin Create Error:", error);
+    res.status(500).json({ error: "שגיאה ביצירת השובר או בשליחת המייל" });
+  }
 });
 
 module.exports = app;

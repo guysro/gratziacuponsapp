@@ -10,6 +10,7 @@
     "test": "node api/index.js"
   },
   "dependencies": {
+    "basic-auth": "^2.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mongodb": "^7.2.0",
