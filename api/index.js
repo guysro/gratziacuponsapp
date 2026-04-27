@@ -75,9 +75,7 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 app.get("/api/admin", adminAuth, (req, res) => {
-  res.sendFile(
-    __dirname.substring(0, __dirname.lastIndexOf("\\")) + "/public/admin.html",
-  );
+  res.sendFile(__dirname + "/public/admin.html");
 });
 
 app.post("/api/submit", (req, res) => {
@@ -95,7 +93,7 @@ app.post("/api/submit", (req, res) => {
 השובר שלך על סך ${amount} ₪ הופק בהצלחה ומוכן לשימוש.
 
 לצפייה, שמירה או הדפסה של השובר שלך, יש ללחוץ על הקישור הבא:
-https://gratziacuponsapp.vercel.app/api/cupon/${cupon._id}
+https://gratziacuponsapp.vercel.app/api/cupon?id=${cupon._id}
 
 * יש להציג שובר זה (במכשיר הנייד או מודפס) בעת המימוש.
 
@@ -356,7 +354,7 @@ app.post("/api/admin/create-coupon", async (req, res) => {
       emailText += `\nהודעה מצורפת:\n"${customMessage}"\n`;
     }
 
-    emailText += `\nלצפייה בשובר שלך: https://gratziacuponsapp.vercel.app/api/cupon/${newCoupon._id}`;
+    emailText += `\nלצפייה בשובר שלך: https://gratziacuponsapp.vercel.app/api/cupon?id=${newCoupon._id}`;
 
     // 3. Send the Email
     const mailOptions = {
